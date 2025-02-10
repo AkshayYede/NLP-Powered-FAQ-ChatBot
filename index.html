@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQs</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        /* Chat Container */
+        .chat-container {
+            width: 750px;
+            height: 600px;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        /* Title */
+        .chat-header {
+            background: #0072ff;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        /* Chat Box */
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            max-height: 450px;
+            scrollbar-width: thin;
+        }
+
+        /* Chat Messages */
+        .message {
+            max-width: 75%;
+            padding: 12px;
+            margin: 5px;
+            border-radius: 10px;
+            display: inline-block;
+            font-size: 16px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        /* User Messages */
+        .user-message {
+            background: #dcf8c6;
+            align-self: flex-end;
+        }
+
+        /* Bot Messages */
+        .bot-message {
+            background: #e8e8e8;
+            align-self: flex-start;
+        }
+
+        /* FAQ Buttons */
+        .faq-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 15px;
+            justify-content: center;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .faq-btn {
+            padding: 10px 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .faq-btn:hover {
+            background: #0056b3;
+        }
+
+        .disable-buttons {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">FAQs</div>
+        <div class="chat-box" id="chat-box">
+            <div class="bot-message message">Hi! Select a question or type your own.</div>
+        </div>
+        <div class="faq-buttons" id="faq-buttons">
+            <button class="faq-btn" onclick="sendMessage(this, 'What are your working hours?')">Working Hours</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'How do I reset my password?')">Reset Password</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'Where is your office located?')">Office Location</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'How can I contact support?')">Contact Support</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'What payment methods do you accept?')">Payment Methods</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'Do you have a refund policy?')">Refund Policy</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'How do I update my account details?')">Update Account</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'Can I cancel my subscription?')">Cancel Subscription</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'Do you offer customer support on weekends?')">Weekend Support</button>
+            <button class="faq-btn" onclick="sendMessage(this, 'How long does shipping take?')">Shipping Time</button>
+        </div>
+    </div>
+
+    <script>
+        let isTyping = false;
+
+        function sendMessage(button, question) {
+            if (isTyping) return;  // Prevent multiple selections while typing
+
+            isTyping = true;
+            button.remove();  // Remove clicked button
+            processUserMessage(question);
+        }
+
+        function processUserMessage(userInput) {
+            let chatBox = document.getElementById("chat-box");
+
+            // Add user message
+            let userMessage = document.createElement("div");
+            userMessage.className = "user-message message";
+            userMessage.innerText = userInput;
+            chatBox.appendChild(userMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Disable buttons while typing
+            document.getElementById("faq-buttons").classList.add("disable-buttons");
+
+            // Send request to backend
+            $.ajax({
+                url: "/get_answer",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ question: userInput }),
+                success: function(response) {
+                    typeWriterEffect(response.answer);
+                },
+                error: function() {
+                    typeWriterEffect("Sorry, something went wrong.");
+                }
+            });
+        }
+
+        function typeWriterEffect(text) {
+            let chatBox = document.getElementById("chat-box");
+            let botMessage = document.createElement("div");
+            botMessage.className = "bot-message message";
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            let i = 0;
+            function typeEffect() {
+                if (i < text.length) {
+                    botMessage.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(typeEffect, 30);  // Adjust speed for a natural feel
+                } else {
+                    isTyping = false;  // Allow new questions
+                    document.getElementById("faq-buttons").classList.remove("disable-buttons");
+                }
+            }
+            typeEffect();
+        }
+    </script>
+</body>
+</html>
